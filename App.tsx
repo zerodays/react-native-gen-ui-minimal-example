@@ -2,12 +2,12 @@ import {
   Button,
   FlatList,
   SafeAreaView,
-  StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
 import { OpenAI, isReactElement, useChat } from "react-native-gen-ui";
+import { z } from "zod";
 
 const openAi = new OpenAI({
   apiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? "",
@@ -22,6 +22,22 @@ export default function App() {
     ],
     onSuccess: (messages) => console.log("Chat success:", messages),
     onError: (error) => console.error("Chat error:", error),
+    tools: {
+      // Example function - roll a dice
+      rollDice: {
+        description: "Roll a dice",
+        parameters: z.object({}),
+        render: async function* () {
+          return {
+            component: <></>,
+            data: {
+              // Random number between 1 and 6
+              result: Math.floor(Math.random() * 6) + 1,
+            },
+          };
+        },
+      },
+    },
   });
 
   return (
@@ -44,13 +60,14 @@ export default function App() {
           renderItem={({ item, index }) => {
             const isLast = index === messages.length - 1;
 
-            // Message can be react component or string (see function calling section for more details)
             if (isReactElement(item)) {
+              // Message can React component or string (see function calling section for more details)
               return item;
             }
 
             switch (item.role) {
               case "user":
+                // User sent messages
                 return (
                   <Text
                     style={{
@@ -63,6 +80,7 @@ export default function App() {
                   </Text>
                 );
               case "assistant":
+                // Assistant responses
                 return (
                   <Text key={index} style={{ paddingVertical: 8 }}>
                     {item.content?.toString()}
@@ -84,6 +102,7 @@ export default function App() {
             gap: 10,
           }}
         >
+          {/* Text input for user to type messages + send button */}
           <TextInput
             value={input}
             style={{
